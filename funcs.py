@@ -1,6 +1,6 @@
 #Salih Toprak
 import numpy as np
-from scipy.integrate import quad
+from scipy.integrate import quad,cumtrapz
 import scipy.signal as signal
 import math as m
 import pandas as pd
@@ -22,6 +22,8 @@ class functions:
         self.locationY = functions.accTodist(self.filteredAccY, len(self.filteredAccY))
         self.locationZ = functions.accTodist(self.filteredAccZ, len(self.filteredAccZ))
 
+        self.pos = [self.locationX, self.locationY, self.locationZ]
+
         self.timeA = functions.timeAxis(len(self.filteredAccY), 60)
 
     def accFilter(acc):
@@ -42,8 +44,9 @@ class functions:
         i = 1
         for i in range(t):  
             t1 = (i-1)/60
-            t2 = i/60      
-            v = quad(func, t1, t2, args=(a[i]-0.55))
+            t2 = i/60
+
+            v = quad(func, t1, t2, args=(a[i]))
             p = quad(func, t1, t2, args=(v[0]))
             position.append(float(p[0]))
         return position
