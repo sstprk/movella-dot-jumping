@@ -18,9 +18,9 @@ class functions:
         self.filteredAccY = functions.accFilter(self.rawAcc_y)
         self.filteredAccZ = functions.accFilter(self.rawAcc_z)
 
-        self.locationX = functions.accTodist(self.filteredAccX, len(self.filteredAccX))
-        self.locationY = functions.accTodist(self.filteredAccY, len(self.filteredAccY))
-        self.locationZ = functions.accTodist(self.filteredAccZ, len(self.filteredAccZ))
+        self.locationX, self.velocityX = functions.accTodist(self.filteredAccX, len(self.filteredAccX))
+        self.locationY, self.velocityY = functions.accTodist(self.filteredAccY, len(self.filteredAccY))
+        self.locationZ, self.velocityZ = functions.accTodist(self.filteredAccZ, len(self.filteredAccZ))
 
         self.pos = [self.locationX, self.locationY, self.locationZ]
 
@@ -38,18 +38,26 @@ class functions:
         return ac
 
     def accTodist(a, t):
-        def func(x, ac):
-            return ac
+        func = lambda x, ac: ac
+        
         position = []
+        velocity = []
         i = 1
         for i in range(t):  
             t1 = (i-1)/60
             t2 = i/60
+            Vsum = 0
+            Psum = 0
 
             v = quad(func, t1, t2, args=(a[i]))
-            p = quad(func, t1, t2, args=(v[0]))
-            position.append(float(p[0]))
-        return position
+            Vx = v[0] - v[1]
+            Vsum += Vx
+            p = quad(func, t1, t2, args=(Vsum))
+            velocity.append(float(Vx))
+            Px = p[0] - p[1]
+            Psum += Px
+            position.append(float(Psum))
+        return position, velocity
     
     def timeAxis(frame_count, freq):
         timeAx = []

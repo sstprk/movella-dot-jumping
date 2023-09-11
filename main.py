@@ -6,7 +6,7 @@ import matplotlib.animation as animation
 import pandas as pd
 
 #funcs.py
-cls = funcs.functions("C:\\Users\\Salih\\Desktop\\Data\\XDOT\\Sali\\Walk2\\Walk2.xlsx")
+cls = funcs.functions("C:\\Users\\Salih\\Desktop\\Data\\XDOT\\Sali\\Swing3\\Swing3.xlsx")
 
 #Figure for comparison between raw and filtered data
 plt.figure(1)
@@ -33,17 +33,30 @@ plt.plot(cls.timeA, cls.filteredAccZ, color="red")
 #Figure for position on each axis
 plt.figure(2)
 
-plt.subplot(1,3,1)
+plt.subplot(2,3,1)
+plt.title("Pos X")
 plt.plot(cls.timeA, cls.locationX , color="green")
-plt.subplot(1,3,2)
+plt.subplot(2,3,2)
+plt.title("Pos Y")
 plt.plot(cls.timeA, cls.locationY, color="blue")
-plt.subplot(1,3,3)
+plt.subplot(2,3,3)
+plt.title("Pos Y")
 plt.plot(cls.timeA, cls.locationZ, color="red")
+plt.subplot(2,3,4)
+plt.title("Vel X")
+plt.plot(cls.timeA, cls.velocityX, color="green")
+plt.subplot(2,3,5)
+plt.title("Vel Y")
+plt.plot(cls.timeA, cls.velocityY, color="blue")
+plt.subplot(2,3,6)
+plt.title("Vel Z")
+plt.plot(cls.timeA, cls.velocityZ, color="red")
 
 #Figure for 3D displacement
 fig = plt.figure(3)
 
 ax = fig.add_subplot(111, projection="3d")
+
 ax.plot(cls.locationX, cls.locationY, cls.locationZ, color="black")
 
 plt.show()
