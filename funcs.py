@@ -56,7 +56,7 @@ class functions:
             velocity.append(float(Vx))
             Px = p[0] - p[1]
             Psum += Px
-            position.append(float(Psum))
+            position.append(float(-Psum))
         return position, velocity
     
     def timeAxis(frame_count, freq):
