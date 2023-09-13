@@ -10,9 +10,13 @@ class functions:
         self.path = path
         self.df = pd.DataFrame(pd.read_excel(self.path))
 
-        self.rawAcc_x = list(self.df.loc[:,"FreeAcc_X"])
+        self.rawAcc_x = list(self.df.loc[:,"dv[1]"])
+        self.rawAcc_y = list(self.df.loc[:,"dv[2]"])
+        self.rawAcc_z = list(self.df.loc[:,"dv[3]"])
+
+        """self.rawAcc_x = list(self.df.loc[:,"FreeAcc_X"])
         self.rawAcc_y = list(self.df.loc[:,"FreeAcc_Y"])
-        self.rawAcc_z = list(self.df.loc[:,"FreeAcc_Z"])
+        self.rawAcc_z = list(self.df.loc[:,"FreeAcc_Z"])"""
 
         self.filteredAccX = functions.accFilter(self.rawAcc_x)
         self.filteredAccY = functions.accFilter(self.rawAcc_y)
@@ -33,8 +37,8 @@ class functions:
         order = 2
         normal_cutoff = cutoff/nyq
         y = signal.medfilt(acc, 21)
-        b, a = signal.butter(order, normal_cutoff, btype="low", analog=False)
-        ac = signal.filtfilt(b, a, y)
+        b, a = signal.butter(order, normal_cutoff, btype="high")
+        ac = signal.filtfilt(b, a, acc)
         return ac
 
     def accTodist(a, t):

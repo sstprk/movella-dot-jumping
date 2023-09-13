@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 #funcs.py
-cls = funcs.functions("C:\\Users\\Salih\\Desktop\\Data\\XDOT\\Sali\\Walk2\\Walk2.xlsx")
+cls = funcs.functions("C:\\Users\\Salih\\Desktop\\Data\\XDOT\\Sali\\MeasurementNew\\Walk1\\Walk1.xlsx")
 
 #Figure for comparison between raw and filtered data
 plt.figure(1)

@@ -12,9 +12,6 @@ def update(num, data, line):
     line.set_data(data[0][:num], data[1][:num])
     line.set_3d_properties(data[2][:num])
     return line
-ax.set(xlim3d=(-10, 10), xlabel='X')
-ax.set(ylim3d=(-10, 10), ylabel='Y')
-ax.set(zlim3d=(-10, 10), zlabel='Z')
 
 ani = animation.FuncAnimation(fig, update, frames=len(cls.locationX), fargs=(cls.pos, line), interval=30, blit=False)
 
