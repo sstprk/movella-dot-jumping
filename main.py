@@ -7,20 +7,20 @@ import pandas as pd
 import numpy as np
 
 #funcs.py
-cls = funcs.functions("C:\\Users\\Salih\\Desktop\\Data\\XDOT\\Sali\\MeasurementNew\\Walk1\\Walk1.xlsx")
+cls = funcs.functions("C:\\Users\\Salih\\Desktop\\Data\\XDOT\\Sali\\Swing3\\Swing3.xlsx")
 
 #Figure for comparison between raw and filtered data
 plt.figure(1)
 
 plt.subplot(2,3,1)
 plt.title("rAcc X")
-plt.plot(cls.timeA, cls.rawAcc_x, color="green", lw=1)
+plt.plot(cls.rawAcc_x, color="green", lw=1)
 plt.subplot(2,3,2)
 plt.title("rAcc Y")
-plt.plot(cls.timeA, cls.rawAcc_y, color="blue", lw=1)
+plt.plot(cls.rawAcc_y, color="blue", lw=1)
 plt.subplot(2,3,3)
 plt.title("rAcc Z")
-plt.plot(cls.timeA, cls.rawAcc_z, color="red", lw=1)
+plt.plot(cls.rawAcc_z, color="red", lw=1)
 plt.subplot(2,3,4)
 plt.title("fAcc X")
 plt.plot(cls.timeA, cls.filteredAccX, color="green", lw=1)
