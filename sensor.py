@@ -1,13 +1,15 @@
 #Salih Toprak
 import numpy as np
+
 from scipy.integrate import quad,cumtrapz
 import scipy.signal as signal
 import scipy.interpolate as interpolate
+
 import pandas as pd
 
 class sensors:
     sensor_count = 0
-    def __init__(self, path, freq):
+    def __init__(self, path, freq=60.0):
         self.freq = freq
         self.path = path
         self.df = pd.DataFrame(pd.read_excel(self.path))
@@ -24,7 +26,8 @@ class sensors:
             self.rz = list(self.df.loc[:,"FreeAcc_Z"])
             self.rawAcc = [self.rx, self.ry, self.rz]
 
-        self.frame_count = list(range(len(self.rawAcc[0])))
+        self.frame_count = len(self.rawAcc[0])
+        self.frame_array = list(range(len(self.rawAcc[0])))
         self.newTime = []
         self.filteredAcc = []
         self.velocity = []
@@ -38,7 +41,7 @@ class sensors:
         sensors.sensor_count += 1
 
     def accFilter(self):
-        fs = 60.0 
+        fs = self.freq 
         cutoff = 2
         nyq = 0.5 * fs  
         order = 2
@@ -49,42 +52,37 @@ class sensors:
             b, a = signal.butter(order, normal_cutoff, btype="low")
             ac = signal.filtfilt(b, a, y)
 
-            self.newTime = np.linspace(0, len(self.frame_count)-1, (len(self.frame_count)-1)*10)
-            f = interpolate.interp1d(self.frame_count, ac, kind="cubic")
+            self.newTime = np.linspace(0, self.frame_count-1, (self.frame_count-1)*10)
+            
+            f = interpolate.CubicSpline(self.frame_array, ac)
             aa = f(self.newTime)
             self.filteredAcc.append(aa)
 
     def accTodist(self):
         func = lambda x, ac: ac
-        position = []
-        velocity = []
-        i = 1
         for a in self.filteredAcc:
             tempV = []
             tempP = []
+            Vsum = 0
+            Psum = 0
+            i = 1
             for i in range(len(a)):  
                 t1 = (i-1)/60
                 t2 = i/60
-                #t = (t1, t2)
-                #aa = (a[i-1], a[i])
-                Vsum = 0
-                Psum = 0
 
-                #v = cumtrapz(aa, t)
                 v = quad(func, t1, t2, args=(a[i]))
                 Vx = v[0] - v[1]
                 Vsum += Vx
-                tempV.append(float(Vsum))
+                tempV.append(float(Vx))
 
-                #p = cumtrapz(aa, t)
-                p = quad(func, t1, t2, args=(Vsum))
+                p = quad(func, t1, t2, args=(Vx))
                 Px = p[0] - p[1]
                 Psum += Px
-                tempP.append(float(-Psum))
+                tempP.append(float(Px))
 
             self.velocity.append(tempV)
             self.position.append(tempP)
     
     def timeAxis(self):
-        for i in range(len(self.frame_count)):
+        for i in range(self.frame_count):
             self.timeA.append(i/self.freq)

@@ -1,15 +1,19 @@
 #Salih Toprak
 from sensor import sensors
+
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
+
 import pandas as pd
+
 import numpy as np
 
 #funcs.py
-sensorLB = sensors("C:\\Users\\Salih\\Desktop\\Data\\XDOT\\Sali\\Swing1\\Swing1.xlsx", 60)
-#sensorLUL = sensor()
-#sensorRUL = sensor()
+sensorOther = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\Swing1\\Swing1.xlsx")
+sensorLB = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\1\\LowerBody.xlsx")
+sensorLUL = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\1\\LeftUpperLeg.xlsx")
+sensorRUL = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\1\\RightUpperLeg.xlsx")
 
 #Figure for comparison between raw and filtered data
 plt.figure(1)
@@ -59,14 +63,41 @@ plt.plot(sensorLB.newTime, sensorLB.velocity[2], color="red", lw=1)
 fig = plt.figure(3)
 
 ax = fig.add_subplot(111, projection="3d")
+plt.title("LB")
+
 ax.plot(sensorLB.position[0], sensorLB.position[1], sensorLB.position[2], color="black", lw=1)
 ax.set(xlabel="X Axis(m)")
 ax.set(ylabel="Y Axis(m)")
 ax.set(zlabel="Z Axis(m)")
 
+fig = plt.figure(4)
+
+ax = fig.add_subplot(111, projection="3d")
+plt.title("LUL")
+
+ax.plot(sensorLUL.position[0], sensorLUL.position[1], sensorLUL.position[2], color="green", lw=1)
+ax.set(xlabel="X Axis(m)")
+ax.set(ylabel="Y Axis(m)")
+ax.set(zlabel="Z Axis(m)")
+
+fig = plt.figure(5)
+
+ax = fig.add_subplot(111, projection="3d")
+plt.title("RUL")
+
+ax.plot(sensorRUL.position[0], sensorRUL.position[1], sensorRUL.position[2], color="red", lw=1)
+ax.set(xlabel="X Axis(m)")
+ax.set(ylabel="Y Axis(m)")
+ax.set(zlabel="Z Axis(m)")
+
+fig = plt.figure(6)
+
+ax = fig.add_subplot(111, projection="3d")
+plt.title("Other")
+
+ax.plot(sensorOther.position[0], sensorOther.position[1], sensorOther.position[2], color="black", lw=1)
+ax.set(xlabel="X Axis(m)")
+ax.set(ylabel="Y Axis(m)")
+ax.set(zlabel="Z Axis(m)")
 
 plt.show()
-
-#Deneme1 = 33.5 cm
-#Deneme2 = 13 cm
-#Deneme3 = 32.5 cm
