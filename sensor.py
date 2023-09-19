@@ -48,7 +48,7 @@ class sensors:
         normal_cutoff = cutoff/nyq
 
         for nAcc in self.rawAcc:
-            y = signal.medfilt(nAcc, 21)
+            y = signal.medfilt(nAcc, 3)
             b, a = signal.butter(order, normal_cutoff, btype="low")
             ac = signal.filtfilt(b, a, y)
 
@@ -70,15 +70,27 @@ class sensors:
                 t1 = (i-1)/60
                 t2 = i/60
 
-                v = quad(func, t1, t2, args=(a[i]))
+                """v = quad(func, t2, t1, args=(a[i]))
                 Vx = v[0] - v[1]
                 Vsum += Vx
                 tempV.append(float(Vx))
 
-                p = quad(func, t1, t2, args=(Vx))
+                p = quad(func, t2, t1, args=(v[0]))
                 Px = p[0] - p[1]
                 Psum += Px
-                tempP.append(float(Px))
+                tempP.append(float(Px))"""
+
+                aaa = [a[i-1], a[i]]
+                t = [t1, t2]
+
+                v = cumtrapz(aaa, t, initial=0)
+                Vx = v[1]
+                Vsum += Vx
+                tempV.append(float(Vx))
+
+                p = cumtrapz(v, t)
+                Psum += p
+                tempP.append(float(p))
 
             self.velocity.append(tempV)
             self.position.append(tempP)

@@ -11,9 +11,9 @@ import numpy as np
 
 #funcs.py
 sensorOther = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\Swing1\\Swing1.xlsx")
-sensorLB = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\1\\LowerBody.xlsx")
-sensorLUL = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\1\\LeftUpperLeg.xlsx")
-sensorRUL = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\1\\RightUpperLeg.xlsx")
+sensorLB = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\2\\LowerBody.xlsx")
+sensorLUL = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\2\\LeftUpperLeg.xlsx")
+sensorRUL = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\2\\RightUpperLeg.xlsx")
 
 #Figure for comparison between raw and filtered data
 plt.figure(1)
