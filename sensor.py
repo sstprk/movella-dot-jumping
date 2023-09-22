@@ -9,7 +9,7 @@ import pandas as pd
 
 import math as m
 
-from pykalman import KalmanFilter
+from kalman import KalmanFilter
 
 class sensors:
     sensor_count = 0
@@ -38,10 +38,15 @@ class sensors:
         self.position = []
         self.timeA = []
 
+        self.dt = 1.0/60
+        self.F = np.array([[1, self.dt, 0.5*self.dt**2], [0, 1, self.dt], [0, 0, 1]])
+        self.H = np.array([0, 0, 1]).reshape(1, 3)
+        self.Q = np.array([[0.2, 0.0, 0.0], [0.0, 0.1, 0.0], [0.0, 0.0, 10e-4]])
+        self.R = 0.0020
+
         self.timeAxis()
-        self.kalmanF()
-        """self.accFilter()
-        self.accTodist()"""
+        self.accFilter()
+        self.accTodist()
         
         sensors.sensor_count += 1
 
@@ -53,15 +58,25 @@ class sensors:
         normal_cutoff = cutoff/nyq
 
         for nAcc in self.rawAcc:
-            y = signal.medfilt(nAcc, 3)
+            """y = signal.medfilt(nAcc, 3)
             b, a = signal.butter(order, normal_cutoff, btype="low")
             ac = signal.filtfilt(b, a, y)
 
             self.newTime = np.linspace(0, self.frame_count-1, (self.frame_count-1)*10)
             
             f = interpolate.CubicSpline(self.frame_array, ac)
-            aa = f(self.newTime)
-            self.filteredAcc.append(aa)
+            aa = f(self.newTime)"""
+
+            self.X0 = np.array([0, 0, nAcc[0]])
+            self.P0 = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0.0020]])
+
+            kf = KalmanFilter(F=self.F, H=self.H, Q=self.Q, R=self.R, x0=self.X0, P=self.P0)
+            predictions = []
+            
+            for z in nAcc:
+                predictions.append(np.dot(self.H, kf.predict())[0])
+                kf.update(z)
+            self.filteredAcc.append(predictions)
 
     def accTodist(self):
         func = lambda x, ac: ac
@@ -75,27 +90,27 @@ class sensors:
                 t1 = (i-1)/60
                 t2 = i/60
 
-                """v = quad(func, t2, t1, args=(a[i]))
-                Vx = v[0] - v[1]
+                v = quad(func, t2, t1, args=(a[i]))
+                Vx = v[1] - v[0]
                 Vsum += Vx
-                tempV.append(float(Vx))
+                tempV.append(float(Vsum))
 
                 p = quad(func, t2, t1, args=(v[0]))
-                Px = p[0] - p[1]
+                Px = p[1] - p[0]
                 Psum += Px
-                tempP.append(float(Px))"""
+                tempP.append(float(Psum))
 
-                aaa = [a[i], a[i-1]]
-                t = [t2, t1]
+                """aaa = [a[i-1], a[i]]
+                t = [t1, t2]
 
-                v = cumtrapz(aaa, t, initial=0)
+                v = cumtrapz(aaa, initial=0)
                 Vx = v[1]
                 Vsum += Vx
-                tempV.append(float(Vx))
+                tempV.append(Vx)
 
-                p = cumtrapz(v, t)
+                p = cumtrapz(v)
                 Psum += p
-                tempP.append(float(p))
+                tempP.append(p)"""
 
             self.velocity.append(tempV)
             self.position.append(tempP)
@@ -103,70 +118,3 @@ class sensors:
     def timeAxis(self):
         for i in range(self.frame_count):
             self.timeA.append(i/self.freq)
-    
-    def kalmanF(self):
-        use_HP_signal = 0
-        for idx in range(3):
-            if use_HP_signal:
-                #AccX_Value = AccX_HP
-                AccX_Variance = 0.0007
-            else:    
-                AccX_Value = np.array(self.rawAcc[idx])
-                AccX_Variance = 0.0020
-
-            # time step
-            dt = 1/60
-
-            # transition_matrix  
-            F = [[1, dt, 0.5*dt**2], 
-                [0,  1,       dt],
-                [0,  0,        1]]
-
-            # observation_matrix   
-            H = [0, 0, 1]
-
-            # transition_covariance 
-            Q = [[0.2,    0,      0], 
-                [  0,  0.1,      0],
-                [  0,    0,  10e-4]]
-
-            # observation_covariance 
-            R = AccX_Variance
-
-            # initial_state_mean
-            X0 = [0,
-                0,
-                AccX_Value[0, 0]]
-
-            # initial_state_covariance
-            P0 = [[  0,    0,               0], 
-                [  0,    0,               0],
-                [  0,    0,   AccX_Variance]]
-
-            n_timesteps = AccX_Value.shape[0]
-            n_dim_state = 3
-            filtered_state_means = np.zeros((n_timesteps, n_dim_state))
-            filtered_state_covariances = np.zeros((n_timesteps, n_dim_state, n_dim_state))
-
-            kf = KalmanFilter(transition_matrices = F, 
-                            observation_matrices = H, 
-                            transition_covariance = Q, 
-                            observation_covariance = R, 
-                            initial_state_mean = X0, 
-                            initial_state_covariance = P0)
-            
-            for t in range(n_timesteps):
-                if t == 0:
-                    filtered_state_means[t] = X0
-                    filtered_state_covariances[t] = P0
-                else:
-                    filtered_state_means[t], filtered_state_covariances[t] = (
-                    kf.filter_update(
-                    filtered_state_means[t-1],
-                    filtered_state_covariances[t-1],
-                    AccX_Value[t, 0]
-                    )
-                )
-            self.filteredAcc.append(filtered_state_means[:, 2])
-            self.velocity.append(filtered_state_means[:, 1])
-            self.position.append(filtered_state_means[:, 0])

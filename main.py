@@ -9,13 +9,11 @@ import pandas as pd
 
 import numpy as np
 
-#funcs.py
 sensorOther = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\Swing1\\Swing1.xlsx")
 sensorLB = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\2\\LowerBody.xlsx")
 sensorLUL = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\2\\LeftUpperLeg.xlsx")
 sensorRUL = sensors("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\2\\RightUpperLeg.xlsx")
 
-print(sensorLB.filteredAcc)
 #Figure for comparison between raw and filtered data
 plt.figure(1)
 
