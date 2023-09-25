@@ -11,7 +11,7 @@ import math as m
 
 from kalman import KalmanFilter
 
-class sensors:
+class Sensor:
     sensor_count = 0
     def __init__(self, path, freq=60.0):
         self.freq = freq
@@ -33,87 +33,77 @@ class sensors:
         self.frame_count = len(self.rawAcc[0])
         self.frame_array = list(range(len(self.rawAcc[0])))
         self.newTime = []
-        self.filteredAcc = []
-        self.velocity = []
-        self.position = []
         self.timeA = []
-
-        self.dt = 1.0/60
-        self.F = np.array([[1, self.dt, 0.5*self.dt**2], [0, 1, self.dt], [0, 0, 1]])
-        self.H = np.array([0, 0, 1]).reshape(1, 3)
-        self.Q = np.array([[0.2, 0.0, 0.0], [0.0, 0.1, 0.0], [0.0, 0.0, 10e-4]])
-        self.R = 0.0020
-
-        self.timeAxis()
-        self.accFilter()
-        self.accTodist()
         
-        sensors.sensor_count += 1
+        self.timeAxis()
 
-    def accFilter(self):
+        self.filteredAcc = self.filter(self.rawAcc)
+        self.rawVelocity = self.integrate(self.filteredAcc)
+        self.filteredVel = self.filter(self.rawVelocity)
+        self.rawPosition = self.integrate(self.filteredVel)
+        self.filteredPos = self.filter(self.rawPosition)
+        
+        Sensor.sensor_count += 1
+
+    def filter(self, rawD):
         fs = self.freq 
         cutoff = 2
         nyq = 0.5 * fs  
         order = 2
         normal_cutoff = cutoff/nyq
+        final = []
 
-        for nAcc in self.rawAcc:
-            """y = signal.medfilt(nAcc, 3)
-            b, a = signal.butter(order, normal_cutoff, btype="low")
-            ac = signal.filtfilt(b, a, y)
+        for data in rawD:
+            dt = 1/60
+            F = np.array([[1, dt, 0.5*dt**2], [0, 1, dt], [0, 0, 1]])
+            H = np.array([0, 0, 1]).reshape(1, 3)
+            Q = np.array([[0.2, 0.0, 0.0], [0.0, 0.1, 0.0], [0.0, 0.0, 10e-4]])
+            R = 0.0020
+            P0 = np.array([[0, 0, 0], [0, 0, 0], [0, 0, R]])
+            X0 = np.array([0, 0, data[0]])
 
-            self.newTime = np.linspace(0, self.frame_count-1, (self.frame_count-1)*10)
-            
-            f = interpolate.CubicSpline(self.frame_array, ac)
-            aa = f(self.newTime)"""
-
-            self.X0 = np.array([0, 0, nAcc[0]])
-            self.P0 = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0.0020]])
-
-            kf = KalmanFilter(F=self.F, H=self.H, Q=self.Q, R=self.R, x0=self.X0, P=self.P0)
+            kf = KalmanFilter(F=F, H=H, Q=Q, R=R, x0=X0, P=P0)
             predictions = []
             
-            for z in nAcc:
-                predictions.append(np.dot(self.H, kf.predict())[0])
+            for z in data:
+                predictions.append(np.dot(H, kf.predict())[0])
                 kf.update(z)
-            self.filteredAcc.append(predictions)
+            #y = signal.medfilt(predictions, 3)
+            #b, a = signal.butter(order, normal_cutoff, btype="low")
+            #ac = signal.filtfilt(b, a, predictions)
 
-    def accTodist(self):
-        func = lambda x, ac: ac
-        for a in self.filteredAcc:
-            tempV = []
-            tempP = []
-            Vsum = 0
-            Psum = 0
+            final.append(predictions)
+        return final
+
+    def integrate(self, filtD):
+        #func = lambda x, ac: ac
+        results = []
+        for data in filtD:
+            tempResult = []
+            rSum = 0
             i = 1
-            for i in range(len(a)):  
+
+            for i in range(len(data)):  
                 t1 = (i-1)/60
                 t2 = i/60
 
-                v = quad(func, t2, t1, args=(a[i]))
+                """v = quad(func, t2, t1, args=(a[i]))
                 Vx = v[1] - v[0]
                 Vsum += Vx
-                tempV.append(float(Vsum))
+                tempV.append(float(v[0]))
 
                 p = quad(func, t2, t1, args=(v[0]))
-                Px = p[1] - p[0]
-                Psum += Px
-                tempP.append(float(Psum))
+                Psum += p[0]
+                tempP.append(float(p[0]))"""
 
-                """aaa = [a[i-1], a[i]]
-                t = [t1, t2]
+                interspaceData = [data[i-1], data[i]]
 
-                v = cumtrapz(aaa, initial=0)
-                Vx = v[1]
-                Vsum += Vx
-                tempV.append(Vx)
-
-                p = cumtrapz(v)
-                Psum += p
-                tempP.append(p)"""
-
-            self.velocity.append(tempV)
-            self.position.append(tempP)
+                res = cumtrapz(interspaceData, initial=0)
+                r = res[1]
+                rSum += r
+                tempResult.append(r)
+            results.append(tempResult)
+        return results
     
     def timeAxis(self):
         for i in range(self.frame_count):
