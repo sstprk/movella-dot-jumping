@@ -9,7 +9,8 @@ import pandas as pd
 
 import math as m
 
-from kalman import KalmanFilter
+from pykalman import KalmanFilter
+#from kalman import KalmanFilter
 
 class Sensor:
     sensor_count = 0
@@ -54,7 +55,7 @@ class Sensor:
         final = []
 
         for data in rawD:
-            dt = 1/60
+            dt = 0.01
             F = np.array([[1, dt, 0.5*dt**2], [0, 1, dt], [0, 0, 1]])
             H = np.array([0, 0, 1]).reshape(1, 3)
             Q = np.array([[0.2, 0.0, 0.0], [0.0, 0.1, 0.0], [0.0, 0.0, 10e-4]])
@@ -62,12 +63,20 @@ class Sensor:
             P0 = np.array([[0, 0, 0], [0, 0, 0], [0, 0, R]])
             X0 = np.array([0, 0, data[0]])
 
-            kf = KalmanFilter(F=F, H=H, Q=Q, R=R, x0=X0, P=P0)
+            kf = KalmanFilter(transition_matrices=F, observation_matrices=H, transition_covariance=Q, observation_covariance=R, initial_state_mean=X0, initial_state_covariance=P0)
             predictions = []
+            n_timesteps = len(data)
+            n_dim_state = 3
+            filtered_state_means = np.zeros((n_timesteps, n_dim_state))
+            filtered_state_covariances = np.zeros((n_timesteps, n_dim_state, n_dim_state))
             
-            for z in data:
-                predictions.append(np.dot(H, kf.predict())[0])
-                kf.update(z)
+            for t in range(n_timesteps):
+                if t == 0:
+                    filtered_state_means[t] = X0
+                    filtered_state_covariances[t] = P0
+                else:
+                    filtered_state_means[t], filtered_state_covariances[t] = kf.filter_update()
+
             #y = signal.medfilt(predictions, 3)
             #b, a = signal.butter(order, normal_cutoff, btype="low")
             #ac = signal.filtfilt(b, a, predictions)
