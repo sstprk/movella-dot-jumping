@@ -3,7 +3,6 @@ import numpy as np
 
 from scipy.integrate import quad,cumtrapz
 import scipy.signal as signal
-import scipy.interpolate as interpolate
 
 import pandas as pd
 
@@ -53,7 +52,7 @@ class Sensor:
                np.multiply(self.rawAcc[:,2], self.rawAcc[:,2])]
         accMag = np.sqrt(mag)
 
-        samplePeriod = 1/256
+        samplePeriod = 1/60
         filtCutOff = 0.001
         b, a = signal.butter(1, (2*filtCutOff)/(1/samplePeriod), "high")
         magFilted = signal.filtfilt(b, a, np.ravel(accMag))
@@ -67,43 +66,51 @@ class Sensor:
         stationary = stationary.astype(int)
 
         self.rawAcc = self.rawAcc * 9.81
-        t=1
+        t1=1
 
         velocity = np.zeros(shape=(len(self.rawAcc), 3))
 
-        for t1 in range(len(velocity)):
+        for t1 in range(len(self.rawAcc)):
 
             #acInterspace = [accFilted[t1], accFilted[t1-1]] 
-            velocity[t1,:] = velocity[t1-1,:] + self.rawAcc[t,:] * samplePeriod
+            velocity[t1,:] = velocity[t1-1,:] + self.rawAcc[t1,:] * samplePeriod
             for ix in range(2):
                 if stationary[t1] == 1:
                     velocity[t1] = [0, 0, 0]
-        print(velocity)
+
         self.Velocity = velocity
+
+        diff = np.diff(stationary)
         velDrift = np.zeros(np.shape(velocity))
-        print(velDrift)
-        stationary_start = np.where(np.diff(stationary) == -1)
-        stationary_start = np.insert(stationary_start, 0, 0)
-        stationary_end = np.where(np.diff(stationary) == 1)
-        stationary_end = np.insert(stationary_end, 0, 0)
+        stationary_start = np.argwhere(diff == -1)
+        #stationary_start = np.insert(stationary_start, 0, 0)
+        stationary_end = np.argwhere(diff == 1)
+        #stationary_end = np.insert(stationary_end, 0, 0)
 
-        for i in range(np.size(stationary_end)):
-            drift_rate = velocity[stationary_end[i], :]/ (stationary_end[i] - stationary_start[i])
+        for i in range(np.size(stationary_end)-1):
+            drift_rate = velocity[stationary_end[i]-1, :]/ float(stationary_end[i] - stationary_start[i])
 
-            enum = np.array(range(1, stationary_end[i] - stationary_start[i]))
+            enum = np.arange((stationary_end[i] - stationary_start[i]-1))
 
-            drift = [np.transpose(enum*drift_rate[0]), np.transpose(enum*drift_rate[1]), np.transpose(enum*drift_rate[2])]
+            drift = np.array([enum*drift_rate[0][0], enum*drift_rate[0][1], enum*drift_rate[0][2]])
 
-            velDrift[stationary_start[i]:stationary_end[i]-1, :] = drift
+            reshapedDrift = np.zeros((len(drift[0]), 3))
+            for e in range(len(drift[0])):
+                reshapedDrift[e][0] = drift[0][e]
+                reshapedDrift[e][1] = drift[1][e]
+                reshapedDrift[e][2] = drift[2][e]
 
+            velDrift[stationary_start[i][0]:stationary_end[i][0]-1, :] = reshapedDrift
+        
         velocity = velocity - velDrift
 
-        pos = np.zeros(shape=(len(velocity), 3))
-        for t2 in range(np.size(pos)):
+        pos = np.zeros(shape=(np.size(velocity), 3))
+        t2=1
+        for t2 in range(len(velocity)):
             #velInterspace = [velocity[t2], velocity[t2-1]]
             pos[t2,:] = pos[t2-1,:] + velocity[t2,:]*samplePeriod
 
-        self.Position.append(pos)
+        self.Position = pos
 
     def integrate(self, filtD):
         results = []
