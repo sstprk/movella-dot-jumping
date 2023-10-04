@@ -8,9 +8,6 @@ import pandas as pd
 
 import math as m
 
-#from pykalman import KalmanFilter
-from kalman import KalmanFilter
-
 class Sensor:
     sensor_count = 0
     def __init__(self, path, freq=60.0):
@@ -35,7 +32,7 @@ class Sensor:
         self.newTime = []
         self.timeA = []
 
-        self.filteredAcc = []
+        self.newAcc = []
         self.Velocity = []
         self.Position = []
 
@@ -46,11 +43,10 @@ class Sensor:
         Sensor.sensor_count += 1
 
     def filter(self):
-        self.rawAcc = np.asmatrix(self.rawAcc)
-        mag = [np.multiply(self.rawAcc[:,0], self.rawAcc[:,0])+
-               np.multiply(self.rawAcc[:,1], self.rawAcc[:,1])+
-               np.multiply(self.rawAcc[:,2], self.rawAcc[:,2])]
-        accMag = np.sqrt(mag)
+        self.newAcc = np.asmatrix(self.newAcc)
+        sum = np.add(np.multiply(self.newAcc[:,0], self.newAcc[:,0]), np.multiply(self.newAcc[:,1], self.newAcc[:,1]))
+        sum = np.add(sum, np.multiply(self.newAcc[:,2], self.newAcc[:,2]))
+        accMag = np.sqrt(sum)
 
         samplePeriod = 1/60
         filtCutOff = 0.001
@@ -65,23 +61,21 @@ class Sensor:
         stationary = magFilted < 0.05
         stationary = stationary.astype(int)
 
-        self.rawAcc = self.rawAcc * 9.81
+        self.newAcc = self.newAcc * 9.81
+        self.newAcc[:,2] = self.newAcc[:,2] - 9.81
         t1=1
 
-        velocity = np.zeros(shape=(len(self.rawAcc), 3))
+        velocity = np.zeros(shape=(len(self.newAcc), 3))
 
-        for t1 in range(len(self.rawAcc)):
+        for t1 in range(len(self.newAcc)):
 
             #acInterspace = [accFilted[t1], accFilted[t1-1]] 
-            velocity[t1,:] = velocity[t1-1,:] + self.rawAcc[t1,:] * samplePeriod
-            for ix in range(2):
-                if stationary[t1] == 1:
-                    velocity[t1] = [0, 0, 0]
-
-        self.Velocity = velocity
-
+            velocity[t1,:] = velocity[t1-1,:] + self.newAcc[t1,:] * samplePeriod
+            if stationary[t1] == 1:
+                velocity[t1,:] = [0, 0, 0]
+ 
         diff = np.diff(stationary)
-        velDrift = np.zeros(np.shape(velocity))
+        velDrift = np.zeros(shape=(self.frame_count, 3))
         stationary_start = np.argwhere(diff == -1)
         #stationary_start = np.insert(stationary_start, 0, 0)
         stationary_end = np.argwhere(diff == 1)
@@ -102,13 +96,15 @@ class Sensor:
 
             velDrift[stationary_start[i][0]:stationary_end[i][0]-1, :] = reshapedDrift
         
-        velocity = velocity - velDrift
+        self.Velocity = velocity = velocity - velDrift
 
         pos = np.zeros(shape=(np.size(velocity), 3))
         t2=1
         for t2 in range(len(velocity)):
             #velInterspace = [velocity[t2], velocity[t2-1]]
             pos[t2,:] = pos[t2-1,:] + velocity[t2,:]*samplePeriod
+        
+        
 
         self.Position = pos
 
@@ -150,4 +146,4 @@ class Sensor:
         rawTemp = np.zeros(shape=(self.frame_count, 3))
         for t in range(self.frame_count):
             rawTemp[t] = [self.rawAcc[0][t], self.rawAcc[1][t], self.rawAcc[2][t]]
-        self.rawAcc = rawTemp
+        self.newAcc = rawTemp
