@@ -1,12 +1,9 @@
 #Salih Toprak
 import numpy as np
 
-from scipy.integrate import quad,cumtrapz
 import scipy.signal as signal
 
 import pandas as pd
-
-import math as m
 
 class Sensor:
     sensor_count = 0
@@ -14,7 +11,8 @@ class Sensor:
         self.freq = freq
         self.path = path
         self.df = pd.DataFrame(pd.read_excel(self.path))
-
+        
+        #Checking column headings
         if not "FreeAcc_X" in list(self.df.columns.values):
             self.rx = list(self.df.loc[:,"dv[1]"])
             self.ry = list(self.df.loc[:,"dv[2]"])
@@ -36,51 +34,65 @@ class Sensor:
         self.Velocity = []
         self.Position = []
 
-        self.organise()
+        self.reshape()
         self.timeAxis()
-        self.filter()
+        self.accToPoS()
         
         Sensor.sensor_count += 1
 
-    def filter(self):
+    def timeAxis(self):
+        for i in range(self.frame_count):
+            self.timeA.append(i/self.freq)
+
+    def reshape(self):
+        rawTemp = np.zeros(shape=(self.frame_count, 3))
+        for t in range(self.frame_count):
+            rawTemp[t] = [self.rawAcc[0][t], self.rawAcc[1][t], self.rawAcc[2][t]]
+        self.newAcc = rawTemp
+    
+    def accToPoS(self):
+        #Calculating acceleration magnitude
         self.newAcc = np.asmatrix(self.newAcc)
         sum = np.add(np.multiply(self.newAcc[:,0], self.newAcc[:,0]), np.multiply(self.newAcc[:,1], self.newAcc[:,1]))
         sum = np.add(sum, np.multiply(self.newAcc[:,2], self.newAcc[:,2]))
         accMag = np.sqrt(sum)
 
+        #High pass filter
         samplePeriod = 1/60
         filtCutOff = 0.001
         b, a = signal.butter(1, (2*filtCutOff)/(1/samplePeriod), "high")
         magFilted = signal.filtfilt(b, a, np.ravel(accMag))
         magFilted = abs(magFilted)
 
+        #Low pass filter
         filtCutOff = 5
         b, a = signal.butter(1,(2*filtCutOff)/(1/samplePeriod), "low")
         magFilted = signal.filtfilt(b, a, magFilted)
         
+        #Stationary threshold 
         stationary = magFilted < 0.05
         stationary = stationary.astype(int)
 
-        self.newAcc = self.newAcc * 9.81
-        self.newAcc[:,2] = self.newAcc[:,2] - 9.81
-        t1=1
-
+        #Velocity list with zeros
         velocity = np.zeros(shape=(len(self.newAcc), 3))
 
+        #Subtraction of acceleration drift in z axis
+        self.newAcc[:,2] = self.newAcc[:, 2] - 0.2
+        
+        #Integrating acceleration for velocity
+        t1=1
         for t1 in range(len(self.newAcc)):
-
-            #acInterspace = [accFilted[t1], accFilted[t1-1]] 
             velocity[t1,:] = velocity[t1-1,:] + self.newAcc[t1,:] * samplePeriod
             if stationary[t1] == 1:
                 velocity[t1,:] = [0, 0, 0]
+
  
+        #Compute integral drift
         diff = np.diff(stationary)
         velDrift = np.zeros(shape=(self.frame_count, 3))
         stationary_start = np.argwhere(diff == -1)
-        #stationary_start = np.insert(stationary_start, 0, 0)
         stationary_end = np.argwhere(diff == 1)
-        #stationary_end = np.insert(stationary_end, 0, 0)
-
+        
         for i in range(np.size(stationary_end)-1):
             drift_rate = velocity[stationary_end[i]-1, :]/ float(stationary_end[i] - stationary_start[i])
 
@@ -98,17 +110,15 @@ class Sensor:
         
         self.Velocity = velocity = velocity - velDrift
 
+        #Integrating velocity for position
         pos = np.zeros(shape=(np.size(velocity), 3))
         t2=1
         for t2 in range(len(velocity)):
-            #velInterspace = [velocity[t2], velocity[t2-1]]
-            pos[t2,:] = pos[t2-1,:] + velocity[t2,:]*samplePeriod
-        
-        
+            pos[t2,:] = pos[t2-1,:] + velocity[t2,:] * samplePeriod
 
         self.Position = pos
 
-    def integrate(self, filtD):
+    """def integrate(self, filtD):
         results = []
         for data in filtD:
             tempResult = []
@@ -116,7 +126,7 @@ class Sensor:
             i = 1
             tempResult = cumtrapz(data, initial=0)
 
-            """for i in range(len(data)):  
+            for i in range(len(data)):  
                 t1 = (i-1)/60
                 t2 = i/60
 
@@ -134,16 +144,6 @@ class Sensor:
                 res = cumtrapz(interspaceData, initial=0)
                 r = res[1]
                 rSum += r
-                tempResult.append(rSum)"""
+                tempResult.append(rSum)
             results.append(tempResult)
-        return results
-    
-    def timeAxis(self):
-        for i in range(self.frame_count):
-            self.timeA.append(i/self.freq)
-
-    def organise(self):
-        rawTemp = np.zeros(shape=(self.frame_count, 3))
-        for t in range(self.frame_count):
-            rawTemp[t] = [self.rawAcc[0][t], self.rawAcc[1][t], self.rawAcc[2][t]]
-        self.newAcc = rawTemp
+        return results"""

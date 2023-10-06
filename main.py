@@ -3,7 +3,7 @@ from sensor import Sensor
 
 import matplotlib.pyplot as plt
 
-sensorOther = Sensor("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\Walk2\\Walk2.xlsx")
+sensorOther = Sensor("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\Swing1\\Swing1.xlsx")
 sensorLB = Sensor("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\Walking\\LowerBody.xlsx")
 sensorLUL = Sensor("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\Walking\\LeftUpperLeg.xlsx")
 sensorRUL = Sensor("C:\\Users\\Salih\\OneDrive\\Desktop\\Data\\XDOT\\Sali\\Walking\\RightUpperLeg.xlsx")
@@ -22,50 +22,43 @@ plt.title("rAcc Z")
 plt.plot(sensorLB.rawAcc[2], color="red", lw=1)
 plt.subplot(2,3,4)
 plt.title("fAcc X")
-plt.plot(sensorLB.newAcc[0,:])
+plt.plot(sensorLB.newAcc[:, 0], color="green", lw=1)
 plt.subplot(2,3,5)
 plt.title("fAcc Y")
-plt.plot(sensorLB.newAcc[1,:])
+plt.plot(sensorLB.newAcc[:, 1], color="blue", lw=1)
 plt.subplot(2,3,6)
 plt.title("fAcc Z")
-plt.plot(sensorLB.newAcc[2,:])
+plt.plot(sensorLB.newAcc[:, 2], color="red", lw=1)
 
 #Figure for position on each axis
 plt.figure(2)
 
 plt.subplot(2,3,1)
 plt.title("Pos X")
-plt.plot(sensorLB.Position[:, 0], color="green", lw=1)
+plt.plot(sensorOther.Position[:, 0], color="green", lw=1)
 plt.subplot(2,3,2)
 plt.title("Pos Y")
-plt.plot(sensorLB.Position[:, 1],  color="blue", lw=1)
+plt.plot(sensorOther.Position[:, 1],  color="blue", lw=1)
 plt.subplot(2,3,3)
 plt.title("Pos Z")
-plt.plot(sensorLB.Position[:, 2], color="red", lw=1)
+plt.plot(sensorOther.Position[:, 2], color="red", lw=1)
 plt.subplot(2,3,4)
 plt.title("Vel X")
-plt.plot(sensorLB.Velocity[:, 0], color="green", lw=1)
+plt.plot(sensorOther.Velocity[:, 0], color="green", lw=1)
 plt.subplot(2,3,5)
 plt.title("Vel Y")
-plt.plot(sensorLB.Velocity[:, 1], color="blue", lw=1)
+plt.plot(sensorOther.Velocity[:, 1], color="blue", lw=1)
 plt.subplot(2,3,6)
 plt.title("Vel Z")
-plt.plot(sensorLB.Velocity[:, 2], color="red", lw=1)
+plt.plot(sensorOther.Velocity[:, 2], color="red", lw=1)
 
 #Figure for 3D displacement
-def animate(num, data, line):
-    line.set_data(data[:num,0], data[:num,1])
-    line.set_3d_properties(data[:num,2])
-    return line
-
 fig = plt.figure(3)
 
 ax = fig.add_subplot(111, projection="3d")
 plt.title("LB")
 
-ax.plot(sensorLB.Position[:1,0], sensorLB.Position[:1,1], sensorLB.Position[:,2], color="black", lw=1)
-
-animate
+ax.plot(sensorLB.Position[:,0], sensorLB.Position[:,1], sensorLB.Position[:,2], color="black", lw=1)
 ax.set(xlabel="X Axis(m)")
 ax.set(ylabel="Y Axis(m)")
 ax.set(zlabel="Z Axis(m)")
