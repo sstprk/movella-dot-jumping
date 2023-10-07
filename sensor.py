@@ -36,6 +36,7 @@ class Sensor:
 
         self.reshape()
         self.timeAxis()
+        self.filter()
         self.accToPoS()
         
         Sensor.sensor_count += 1
@@ -48,13 +49,20 @@ class Sensor:
         rawTemp = np.zeros(shape=(self.frame_count, 3))
         for t in range(self.frame_count):
             rawTemp[t] = [self.rawAcc[0][t], self.rawAcc[1][t], self.rawAcc[2][t]]
-        self.newAcc = rawTemp
+        self.rawAcc = rawTemp
     
+    def filter(self):
+        dfFilt = pd.DataFrame(self.rawAcc)
+        window=2
+        self.newAcc = np.array(dfFilt.rolling(window).mean())
+        self.newAcc[0:window-1, :] = [0,0,0]
+        
+
     def accToPoS(self):
         #Calculating acceleration magnitude
-        self.newAcc = np.asmatrix(self.newAcc)
-        sum = np.add(np.multiply(self.newAcc[:,0], self.newAcc[:,0]), np.multiply(self.newAcc[:,1], self.newAcc[:,1]))
-        sum = np.add(sum, np.multiply(self.newAcc[:,2], self.newAcc[:,2]))
+        newAcc = np.asmatrix(self.newAcc)
+        sum = np.add(np.multiply(newAcc[:,0], newAcc[:,0]), np.multiply(newAcc[:,1], newAcc[:,1]))
+        sum = np.add(sum, np.multiply(newAcc[:,2], newAcc[:,2]))
         accMag = np.sqrt(sum)
 
         #High pass filter
@@ -74,15 +82,15 @@ class Sensor:
         stationary = stationary.astype(int)
 
         #Velocity list with zeros
-        velocity = np.zeros(shape=(len(self.newAcc), 3))
+        velocity = np.zeros(shape=(len(newAcc), 3))
 
         #Subtraction of acceleration drift in z axis
-        self.newAcc[:,2] = self.newAcc[:, 2] - 0.2
+        newAcc[:,2] = newAcc[:, 2] - 0.2
         
         #Integrating acceleration for velocity
         t1=1
-        for t1 in range(len(self.newAcc)):
-            velocity[t1,:] = velocity[t1-1,:] + self.newAcc[t1,:] * samplePeriod
+        for t1 in range(len(newAcc)):
+            velocity[t1,:] = velocity[t1-1,:] + newAcc[t1,:] * samplePeriod
             if stationary[t1] == 1:
                 velocity[t1,:] = [0, 0, 0]
 
@@ -111,39 +119,8 @@ class Sensor:
         self.Velocity = velocity = velocity - velDrift
 
         #Integrating velocity for position
-        pos = np.zeros(shape=(np.size(velocity), 3))
+        pos = np.zeros(shape=(len(velocity), 3))
         t2=1
         for t2 in range(len(velocity)):
             pos[t2,:] = pos[t2-1,:] + velocity[t2,:] * samplePeriod
-
         self.Position = pos
-
-    """def integrate(self, filtD):
-        results = []
-        for data in filtD:
-            tempResult = []
-            rSum = 0
-            i = 1
-            tempResult = cumtrapz(data, initial=0)
-
-            for i in range(len(data)):  
-                t1 = (i-1)/60
-                t2 = i/60
-
-                v = quad(func, t2, t1, args=(a[i]))
-                Vx = v[1] - v[0]
-                Vsum += Vx
-                tempV.append(float(v[0]))
-
-                p = quad(func, t2, t1, args=(v[0]))
-                Psum += p[0]
-                tempP.append(float(p[0]))
-
-                interspaceData = [data[i-1], data[i]]
-
-                res = cumtrapz(interspaceData, initial=0)
-                r = res[1]
-                rSum += r
-                tempResult.append(rSum)
-            results.append(tempResult)
-        return results"""
